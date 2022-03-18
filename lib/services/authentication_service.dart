@@ -12,17 +12,15 @@ signUp.
 
 class AuthenticationService extends ChangeNotifier {
   final FirebaseFirestore _firestoreReference = FirebaseFirestore.instance;
-  User? currentUser = FirebaseAuth.instance.currentUser;
-  bool? emailVerified = false;
-  bool? signedIn = false;
+  User? currentUser;
+  bool emailVerified = false;
+  bool signedIn = false;
 
-  /*
-  This function will provide email verification(OTP), and will update the user
-  email. Also notifies the listeners if the email is verified.
-  */
-  Future<void> verifyAndUpdateUserEmail(
-      BuildContext context, String? newEmail) async {
-    await currentUser?.verifyBeforeUpdateEmail(newEmail!);
+  Future<void> createUser(String? email) async {
+    await FirebaseAuth.instance
+        .createUserWithEmailAndPassword(email: email!, password: "LenovoG570!");
+    currentUser = FirebaseAuth.instance.currentUser;
+    await currentUser?.sendEmailVerification();
     await currentUser?.reload();
 
     if (currentUser!.emailVerified) {
@@ -30,6 +28,21 @@ class AuthenticationService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /*
+  This function will provide email verification(OTP), and will update the user
+  email. Also notifies the listeners if the email is verified.
+  */
+  // Future<void> verifyAndUpdateUserEmail(
+  //     BuildContext context, String? newEmail) async {
+  //   await currentUser?.verifyBeforeUpdateEmail(newEmail!);
+  //   await currentUser?.reload();
+
+  //   if (currentUser!.emailVerified) {
+  //     emailVerified = true;
+  //     notifyListeners();
+  //   }
+  // }
 
   /*
   This function is used to signup the user. It takes a list of image urls as
