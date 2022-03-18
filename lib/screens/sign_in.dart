@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_auth/screens/sign_in_password.dart';
+import 'package:image_auth/screens/sign_up.dart';
 import 'package:image_auth/services/authentication_service.dart';
 import 'package:image_auth/widgets/custom_button.dart';
 import 'package:image_auth/widgets/text_box.dart';
@@ -51,13 +54,27 @@ class _SignInState extends State<SignIn> {
                     title: "Next",
                     icon: Icons.navigate_next,
                     onTap: () async {
-                      await context
-                          .read<AuthenticationService>()
-                          .createUser(controllerEmail?.text);
-                      debugPrint(controllerEmail?.text);
+                      try {
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                            email: controllerEmail!.text,
+                            password: "LenovoG570!");
+                        Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => const SignInPassword()));
+                        debugPrint(controllerEmail?.text);
+                      } catch (e) {
+                        if (e is FirebaseAuthException) {
+                          debugPrint(e.message);
+                        }
+                      }
                     }),
                 divider(),
-                CustomButton(title: "Sign Up", icon: Icons.add, onTap: () {}),
+                CustomButton(
+                    title: "Sign Up",
+                    icon: Icons.add,
+                    onTap: () {
+                      Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => SignUp()));
+                    }),
               ],
             ),
           ),

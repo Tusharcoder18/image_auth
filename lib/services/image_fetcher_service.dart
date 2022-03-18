@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_auth/Keys/pexels_api_key.dart';
@@ -16,6 +17,7 @@ API.
 */
 
 class ImageFetcherService {
+  final FirebaseFirestore _firestoreReference = FirebaseFirestore.instance;
   final _client = UnsplashClient(
     settings: ClientSettings(
         credentials: AppCredentials(
@@ -81,6 +83,20 @@ class ImageFetcherService {
   //   }
   // }
 
+  // Helper function
+  Future<List<String?>> fetchImages() async {
+    List<String?> imageUrls = [];
+    final photos = await _client.photos
+        .random(count: 9, orientation: PhotoOrientation.squarish)
+        .goAndGet();
+    for (Photo photo in photos) {
+      var url = photo.urls.thumb.toString();
+      debugPrint(url);
+      imageUrls.add(url);
+    }
+    return imageUrls;
+  }
+
   /*
   This function uses the unsplash_client plugin which internally uses the
   Unsplash API to fetch random images. Random endpoint available in this
@@ -88,15 +104,7 @@ class ImageFetcherService {
   */
   Future<void> fetchRandomImages(BuildContext context) async {
     try {
-      List<String?> imageUrls = [];
-      final photos = await _client.photos
-          .random(count: 9, orientation: PhotoOrientation.squarish)
-          .goAndGet();
-      for (Photo photo in photos) {
-        var url = photo.urls.thumb.toString();
-        debugPrint(url);
-        imageUrls.add(url);
-      }
+      final imageUrls = await fetchImages();
       context.read<ImageDatabase>().setRandomImages(imageUrls);
     } catch (e) {
       debugPrint(e.toString());
@@ -124,5 +132,21 @@ class ImageFetcherService {
     } catch (e) {
       debugPrint(e.toString());
     }
+  }
+
+  Future<void> fetchImagesForSignIn(BuildContext context, String? email) async {
+    List<List<String?>> roundsImages = [];
+    var rnd = Random();
+    var snapshot =
+        await _firestoreReference.collection("users").doc(email).get();
+    List<dynamic> originalPassword = snapshot.data()![email];
+    int passwordIndex = 0;
+    for (var i = 0; i < 5; i++) {
+      List<String?> imageUrls = await fetchImages();
+      imageUrls[rnd.nextInt(imageUrls.length)] =
+          originalPassword[passwordIndex++].toString();
+      roundsImages.add(imageUrls);
+    }
+    context.read<ImageDatabase>().setRoundsImages(roundsImages);
   }
 }
